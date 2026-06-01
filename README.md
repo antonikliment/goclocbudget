@@ -18,6 +18,7 @@ plugins:
 
 Enable it in `.golangci.yml`:
 
+
 ```yaml
 version: "2"
 
