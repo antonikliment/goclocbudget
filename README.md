@@ -18,6 +18,7 @@ plugins:
 
 Enable it in `.golangci.yml`:
 
+
 ```yaml
 version: "2"
 
@@ -37,8 +38,6 @@ linters:
           exclude-dirs:
             - vendor
             - .git
-            - node_modules
-            - app/dist
 ```
 
 Build and run:
