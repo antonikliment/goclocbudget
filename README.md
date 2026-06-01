@@ -37,8 +37,6 @@ linters:
           exclude-dirs:
             - vendor
             - .git
-            - node_modules
-            - app/dist
 ```
 
 Build and run:
