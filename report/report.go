@@ -82,10 +82,11 @@ func bar(value, max int) string {
 }
 
 func truncate(value string, width int) string {
-	if len(value) <= width {
+	runes := []rune(value)
+	if len(runes) <= width {
 		return value
 	}
-	return value[:width-1] + "…"
+	return string(runes[:width-1]) + "…"
 }
 
 func average(sum, count int) float64 {

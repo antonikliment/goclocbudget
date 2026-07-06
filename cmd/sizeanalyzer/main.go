@@ -60,7 +60,7 @@ func write(path string, data []byte, err error) {
 	if err != nil {
 		fail("rendering report failed", err)
 	}
-	if err := os.WriteFile(path, data, 0o600); err != nil {
+	if err := os.WriteFile(path, data, 0o644); err != nil {
 		fail("writing report failed", err)
 	}
 }

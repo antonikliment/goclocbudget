@@ -45,3 +45,9 @@ func TestHTMLEscapesScriptClosingTags(t *testing.T) {
 		t.Fatalf("unsafe embedded JSON: %s", html)
 	}
 }
+
+func TestTruncatePreservesRunes(t *testing.T) {
+	if got := truncate("ab界cd", 4); got != "ab界…" {
+		t.Fatalf("truncate = %q", got)
+	}
+}
