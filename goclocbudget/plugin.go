@@ -90,7 +90,7 @@ func (p *plugin) count(root string) (countResult, error) {
 	if err != nil {
 		return countResult{}, err
 	}
-	files := analysisFiles(tree)
+	files := metrics.Files(tree)
 	sort.SliceStable(files, func(i, j int) bool {
 		if files[i].Code != files[j].Code {
 			return files[i].Code > files[j].Code
@@ -117,17 +117,6 @@ func moduleRoot(start string) (string, error) {
 		}
 		root = parent
 	}
-}
-
-func analysisFiles(node *metrics.Node) []*metrics.Node {
-	if node.IsFile {
-		return []*metrics.Node{node}
-	}
-	var files []*metrics.Node
-	for _, child := range node.Children {
-		files = append(files, analysisFiles(child)...)
-	}
-	return files
 }
 
 func largestFileSummary(files []*metrics.Node, limit int) []string {
