@@ -57,11 +57,104 @@ Unparseable files retain their LOC and produce warnings by default; use
 `-strict` to fail immediately. Use `-hotspots N` to control the number of
 complexity hotspots retained per file.
 
+### Pull request analysis
+
+Compare the current working tree with its merge base on `main`:
+
+```bash
+go tool sizeanalyzer -pr
+```
+
+PR mode includes committed, staged, unstaged, and untracked files. It reports
+Git line changes, gocloc code deltas, and function-level complexity added,
+removed, and net. Use another target branch with `-base` and write CI artifacts
+with the existing output flags:
+
+```bash
+go tool sizeanalyzer -pr -base origin/main \
+  -json pr-metrics.json -html pr-metrics.html
+```
+
+The base ref and its merge-base history must exist locally. For GitHub Actions,
+check out full history before running the tool:
+
+```yaml
+- uses: actions/checkout@v4
+  with:
+    fetch-depth: 0
+- run: go tool sizeanalyzer -pr -base origin/main
+```
+
 To run without adding a tool dependency:
 
 ```bash
 go run github.com/antonikliment/go-code-metrics/cmd/sizeanalyzer@v0.0.2
 ```
+
+## Continuous integration
+
+The analyzer runs anywhere Go is available. Two ready-made pipelines live in this
+repository and double as copy-paste templates for downstream projects.
+
+### GitHub Actions
+
+`.github/workflows/pr-metrics.yml` runs PR analysis on every pull request and
+attaches the report to the run as a downloadable artifact:
+
+```yaml
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  metrics:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0            # full history so merge-base resolves
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - run: git fetch --no-tags origin "${{ github.base_ref }}"
+      - run: go run ./cmd/sizeanalyzer -pr -base "origin/${{ github.base_ref }}" -html pr-metrics.html
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pr-metrics
+          path: pr-metrics.html
+```
+
+Downstream projects that pin the tool can replace `go run ./cmd/sizeanalyzer`
+with `go tool sizeanalyzer`.
+
+### Woodpecker CI
+
+`.woodpecker/pr-metrics.yaml` is the equivalent pipeline. Woodpecker clones
+shallow by default, so override the clone depth for `merge-base`, and fetch the
+target branch before analysis:
+
+```yaml
+when:
+  - event: pull_request
+
+clone:
+  git:
+    image: woodpeckerci/plugin-git
+    settings:
+      depth: 0
+
+steps:
+  metrics:
+    image: golang:1.26
+    commands:
+      - git fetch --no-tags origin "$CI_COMMIT_TARGET_BRANCH"
+      - go run ./cmd/sizeanalyzer -pr -base "origin/$CI_COMMIT_TARGET_BRANCH" -html pr-metrics.html
+```
+
+Woodpecker has no built-in per-run artifact store. To publish the HTML report,
+add a storage step (for example `woodpeckerci/plugin-s3`) and provide its
+credentials as repo secrets. `.woodpecker/ci.yaml` additionally mirrors the
+GitHub Actions `test` + `lint` jobs.
 
 ## Go LOC budget
 
